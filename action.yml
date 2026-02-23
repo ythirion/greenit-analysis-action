@@ -1,0 +1,159 @@
+name: 'GreenIT Analysis'
+description: 'Run GreenIT-Analysis CLI and enforce an EcoIndex quality gate on your web application'
+author: 'Yoan Thirion'
+
+branding:
+  icon: 'leaf'
+  color: 'green'
+
+inputs:
+  url-file:
+    description: 'Path (relative to workspace) to a YAML file containing the list of URLs to analyze'
+    required: false
+    default: 'greenit-urls.yaml'
+
+  min-ecoindex:
+    description: 'Minimum EcoIndex score (0–100) required to pass the quality gate'
+    required: false
+    default: '50'
+
+  timezone:
+    description: 'Timezone passed to the GreenIT container (e.g. Europe/Paris, America/New_York)'
+    required: false
+    default: 'Europe/Paris'
+
+  greenit-image:
+    description: 'Docker image to use for the GreenIT-Analysis CLI'
+    required: false
+    default: 'jpreisner/greenit-analysis-cli:latest'
+
+  fail-on-threshold:
+    description: 'Fail the workflow step when any URL EcoIndex is below min-ecoindex'
+    required: false
+    default: 'true'
+
+  upload-report:
+    description: 'Upload the generated HTML report as a workflow artifact'
+    required: false
+    default: 'true'
+
+  report-name:
+    description: 'Name of the uploaded artifact'
+    required: false
+    default: 'greenit-report'
+
+  retention-days:
+    description: 'Number of days to retain the uploaded artifact'
+    required: false
+    default: '30'
+
+outputs:
+  ecoindex:
+    description: 'The lowest EcoIndex score (0–100) across all analyzed URLs'
+    value: ${{ steps.quality-gate.outputs.ecoindex }}
+  report-path:
+    description: 'Absolute path to the generated HTML report on the runner'
+    value: ${{ steps.setup.outputs.output-dir }}/results.html
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup GreenIT directories
+      id: setup
+      shell: bash
+      run: |
+        GREENIT_DIR="$RUNNER_TEMP/greenit-analysis"
+        mkdir -p "$GREENIT_DIR/input" "$GREENIT_DIR/output"
+        chmod -R 777 "$GREENIT_DIR/output"
+        echo "greenit-dir=$GREENIT_DIR" >> $GITHUB_OUTPUT
+        echo "output-dir=$GREENIT_DIR/output" >> $GITHUB_OUTPUT
+
+    - name: Copy URL file
+      shell: bash
+      run: |
+        GREENIT_DIR="${{ steps.setup.outputs.greenit-dir }}"
+        if [ -f "${{ github.workspace }}/${{ inputs.url-file }}" ]; then
+          cp "${{ github.workspace }}/${{ inputs.url-file }}" "$GREENIT_DIR/input/url.yaml"
+          echo "Using URL file: ${{ inputs.url-file }}"
+          echo "--- URLs to analyze ---"
+          cat "$GREENIT_DIR/input/url.yaml"
+        else
+          echo "❌ URL file '${{ inputs.url-file }}' not found"
+          exit 1
+        fi
+
+    - name: Cache Docker image
+      uses: actions/cache@v4
+      with:
+        path: /tmp/greenit-docker-cache
+        key: greenit-docker-${{ inputs.greenit-image }}
+
+    - name: Load or pull Docker image
+      shell: bash
+      run: |
+        CACHE_FILE="/tmp/greenit-docker-cache/image.tar"
+        IMAGE="${{ inputs.greenit-image }}"
+        if [ -f "$CACHE_FILE" ]; then
+          echo "Loading Docker image from cache..."
+          docker load < "$CACHE_FILE"
+        else
+          echo "Pulling Docker image..."
+          docker pull "$IMAGE"
+          mkdir -p /tmp/greenit-docker-cache
+          docker save "$IMAGE" -o "$CACHE_FILE"
+        fi
+
+    - name: Run GreenIT-Analysis
+      shell: bash
+      run: |
+        GREENIT_DIR="${{ steps.setup.outputs.greenit-dir }}"
+
+        docker run --init --rm --cap-add=SYS_ADMIN \
+          -v "$GREENIT_DIR/input:/app/input" \
+          -v "$GREENIT_DIR/output:/app/output" \
+          -e TZ=${{ inputs.timezone }} \
+          --network host \
+          ${{ inputs.greenit-image }} \
+          greenit analyse /app/input/url.yaml /app/output/results.html --ci --format=html
+
+    - name: Green IT quality gate
+      id: quality-gate
+      shell: bash
+      run: |
+        REPORT="${{ steps.setup.outputs.output-dir }}/results.html"
+
+        echo "Parsing GreenIT results from HTML report..."
+        mapfile -t SCORES < <(grep -oP '\d+(?=&nbsp;<span class="grade)' "$REPORT")
+
+        if [ "${#SCORES[@]}" -eq 0 ]; then
+          echo "❌ Could not extract any EcoIndex score from the HTML report"
+          exit 1
+        fi
+
+        FAILED=false
+        MIN_SCORE=100
+        for SCORE in "${SCORES[@]}"; do
+          [ "$SCORE" -lt "$MIN_SCORE" ] && MIN_SCORE=$SCORE
+          if [ "${{ inputs.fail-on-threshold }}" = "true" ] && [ "$SCORE" -lt "${{ inputs.min-ecoindex }}" ]; then
+            echo "❌ EcoIndex $SCORE — below threshold of ${{ inputs.min-ecoindex }}"
+            FAILED=true
+          else
+            echo "✅ EcoIndex $SCORE — meets threshold of ${{ inputs.min-ecoindex }}"
+          fi
+        done
+
+        echo "Lowest EcoIndex: $MIN_SCORE"
+        echo "ecoindex=$MIN_SCORE" >> $GITHUB_OUTPUT
+
+        if [ "$FAILED" = "true" ]; then
+          echo "❌ One or more URLs did not meet the EcoIndex threshold of ${{ inputs.min-ecoindex }}"
+          exit 1
+        fi
+
+    - name: Upload GreenIT report
+      if: ${{ always() && inputs.upload-report == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.report-name }}
+        path: ${{ runner.temp }}/greenit-analysis/output/results.html
+        retention-days: ${{ inputs.retention-days }}

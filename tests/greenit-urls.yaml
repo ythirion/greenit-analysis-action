@@ -1,0 +1,4 @@
+- name: 'Local test page'
+  url: 'http://localhost:8080'
+- name: 'External page'
+  url: 'https://www.ecoindex.fr'
