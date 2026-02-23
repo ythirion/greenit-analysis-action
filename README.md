@@ -1,10 +1,12 @@
 <div align="center">
-  <img src="img/greenit-analysis.png" alt="GreenIT Analysis" width="180" />
+  <a href="https://github.com/marketplace/actions/greenit-analysis">
+    <img src="img/greenit-analysis.png" alt="GreenIT Analysis" width="180" />
+  </a>
 </div>
 
 # GreenIT Analysis
 
-[![GitHub release](https://img.shields.io/github/v/release/ythirion/greenit-analysis)](https://github.com/ythirion/greenit-analysis/releases)
+[![GitHub release](https://img.shields.io/github/v/release/ythirion/greenit-analysis-action)](https://github.com/ythirion/greenit-analysis-action/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A GitHub Action that runs [GreenIT-Analysis CLI](https://github.com/jpreisner/greenit-analysis-cli) against your web application and enforces an **EcoIndex quality gate** directly in your CI pipeline.
