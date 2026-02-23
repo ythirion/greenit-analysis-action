@@ -3,7 +3,7 @@ description: 'Run GreenIT-Analysis CLI and enforce an EcoIndex quality gate on y
 author: 'Yoan Thirion'
 
 branding:
-  icon: 'leaf'
+  icon: 'globe'
   color: 'green'
 
 inputs:
