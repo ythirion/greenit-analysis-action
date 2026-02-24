@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/marketplace/actions/greenit-analysis">
-    <img src="img/greenit-analysis.png" alt="GreenIT Analysis" width="180" />
+    <img src="img/greenit-analysis.webp" alt="GreenIT Analysis" width="200" />
   </a>
 </div>
 
@@ -17,13 +17,47 @@ A GitHub Action that runs [GreenIT-Analysis CLI](https://github.com/jpreisner/gr
 
 ## What it does
 
-1. Runs GreenIT-Analysis CLI via `Docker` against one or more URLs
+1. Runs GreenIT-Analysis CLI through `Docker` against one or more URLs
 2. Generates an `HTML report` with EcoIndex scores
 3. Enforces a configurable `quality gate` (fails if **any** URL scores below the threshold)
 4. Uploads the HTML report as a workflow artifact
 
+## CI Pipeline overview
+
+Here is an example of a pipeline and how to integrate this action:
+
+```mermaid
+flowchart TD
+    A([Push or PR]) --> B[Build App]
+
+    B -->|❌ Build error| F1([Pipeline failed])
+    B -->|✅| C[Run Tests]
+
+    C -->|❌ Test failure| F2([Pipeline failed])
+    C -->|✅ All green| D[SonarQube Analysis]
+
+    D -->|❌ Quality gate\nnot met| F3([Pipeline failed])
+    D -->|✅ Code quality OK| E[GreenIT Analysis]
+
+    E -->|❌ EcoIndex below threshold\nfor at least one URL| F4([Pipeline failed])
+    E -->|✅ All URLs meet\nEcoIndex threshold| G([✅ Pipeline passed])
+
+    style A fill:#4C6EF5,color:#fff,stroke:none
+    style B fill:#343a40,color:#fff,stroke:none
+    style C fill:#343a40,color:#fff,stroke:none
+    style D fill:#343a40,color:#fff,stroke:none
+    style E fill:#2f9e44,color:#fff,stroke:none
+    style F1 fill:#c92a2a,color:#fff,stroke:none
+    style F2 fill:#c92a2a,color:#fff,stroke:none
+    style F3 fill:#c92a2a,color:#fff,stroke:none
+    style F4 fill:#c92a2a,color:#fff,stroke:none
+    style G fill:#2f9e44,color:#fff,stroke:none
+```
+
+---
+
 ## Prerequisites
-- The runner must have **Docker** available (`ubuntu-latest` on GitHub-hosted runners works out of the box)
+- The runner must have `Docker` available (`ubuntu-latest` on GitHub-hosted runners works out of the box)
 - Your web application must be **running and reachable** on the runner before calling this action
 - The runner needs `--cap-add=SYS_ADMIN` Docker capability (available on GitHub-hosted runners)
 
@@ -132,16 +166,16 @@ jobs:
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `url-file` | Path (relative to workspace) to a YAML file listing URLs | No | `greenit-urls.yaml` |
-| `min-ecoindex` | Minimum EcoIndex score (0–100) to pass the quality gate | No | `50` |
-| `timezone` | Timezone passed to the GreenIT container | No | `Europe/Paris` |
-| `greenit-image` | Docker image for GreenIT-Analysis CLI | No | `jpreisner/greenit-analysis-cli:latest` |
-| `fail-on-threshold` | Fail the step if any URL EcoIndex is below `min-ecoindex` | No | `true` |
-| `upload-report` | Upload the HTML report as a workflow artifact | No | `true` |
-| `report-name` | Name of the uploaded artifact | No | `greenit-report` |
-| `retention-days` | Number of days to retain the uploaded artifact | No | `30` |
+| Input               | Description                                               | Required | Default                                 |
+|---------------------|-----------------------------------------------------------|----------|-----------------------------------------|
+| `url-file`          | Path (relative to workspace) to a YAML file listing URLs  | No       | `greenit-urls.yaml`                     |
+| `min-ecoindex`      | Minimum EcoIndex score (0–100) to pass the quality gate   | No       | `50`                                    |
+| `timezone`          | Timezone passed to the GreenIT container                  | No       | `Europe/Paris`                          |
+| `greenit-image`     | Docker image for GreenIT-Analysis CLI                     | No       | `jpreisner/greenit-analysis-cli:latest` |
+| `fail-on-threshold` | Fail the step if any URL EcoIndex is below `min-ecoindex` | No       | `true`                                  |
+| `upload-report`     | Upload the HTML report as a workflow artifact             | No       | `true`                                  |
+| `report-name`       | Name of the uploaded artifact                             | No       | `greenit-report`                        |
+| `retention-days`    | Number of days to retain the uploaded artifact            | No       | `30`                                    |
 
 ### URL file format
 
@@ -152,32 +186,18 @@ jobs:
   url: 'http://localhost:8080/other'
 ```
 
+More infos on the url file format and its options [here](https://github.com/cnumr/GreenIT-Analysis-cli?tab=readme-ov-file#construction-du-fichier-dentr%C3%A9e).
+
 > **Quality gate behaviour:** the step fails if **at least one** URL scores below `min-ecoindex`. The `ecoindex` output contains the **lowest** score across all analyzed URLs.
 
 ---
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
-| `ecoindex` | The lowest EcoIndex score (0–100) across all analyzed URLs |
-| `report-path` | Absolute path to the generated HTML report on the runner |
-
----
-
-## EcoIndex grading
-
-| Grade | Score |
-|-------|-------|
-| A | 75–100 |
-| B | 65–74 |
-| C | 50–64 |
-| D | 35–49 |
-| E | 20–34 |
-| F | 5–19 |
-| G | 0–4 |
-
-> A score of **50** (grade C) is the default threshold. Adjust `min-ecoindex` to fit your quality standards.
+| Output        | Description                                                |
+|---------------|------------------------------------------------------------|
+| `ecoindex`    | The lowest EcoIndex score (0–100) across all analyzed URLs |
+| `report-path` | Absolute path to the generated HTML report on the runner   |
 
 ---
 
