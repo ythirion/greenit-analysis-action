@@ -169,7 +169,7 @@ jobs:
 | Input               | Description                                               | Required | Default                                 |
 |---------------------|-----------------------------------------------------------|----------|-----------------------------------------|
 | `url-file`          | Path (relative to workspace) to a YAML file listing URLs  | No       | `greenit-urls.yaml`                     |
-| `min-ecoindex`      | Minimum EcoIndex score (0–100) to pass the quality gate   | No       | `50`                                    |
+| `min-ecoindex`      | Minimum EcoIndex score (0–100) to pass the quality gate   | No       | `90`                                    |
 | `timezone`          | Timezone passed to the GreenIT container                  | No       | `Europe/Paris`                          |
 | `greenit-image`     | Docker image for GreenIT-Analysis CLI                     | No       | `jpreisner/greenit-analysis-cli:latest` |
 | `fail-on-threshold` | Fail the step if any URL EcoIndex is below `min-ecoindex` | No       | `true`                                  |
