@@ -81,7 +81,7 @@ Then use the action — no extra configuration needed when the file is at the de
 
 ```yaml
 - name: GreenIT Analysis
-  uses: ythirion/greenit-analysis@v1
+  uses: ythirion/greenit-analysis-action@0.1.0
   with:
     min-ecoindex: '75'
 ```
@@ -90,7 +90,7 @@ Or point to a custom file location:
 
 ```yaml
 - name: GreenIT Analysis
-  uses: ythirion/greenit-analysis@v1
+  uses: ythirion/greenit-analysis-action@0.1.0
   with:
     url-file: 'tests/greenit-urls.yaml'
     min-ecoindex: '75'
@@ -101,7 +101,7 @@ Or point to a custom file location:
 ```yaml
 - name: GreenIT Analysis
   id: greenit
-  uses: ythirion/greenit-analysis@v1
+  uses: ythirion/greenit-analysis-action@0.1.0
   with:
     url-file: 'greenit-urls.yaml'
 
@@ -155,7 +155,7 @@ jobs:
           npx wait-on http://localhost:8080
 
       - name: GreenIT Analysis
-        uses: ythirion/greenit-analysis@v1
+        uses: ythirion/greenit-analysis-action@0.1.0
         with:
           url-file: 'greenit-urls.yaml'
           min-ecoindex: '90'
