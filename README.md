@@ -36,11 +36,11 @@ flowchart TD
     C -->|❌ Test failure| F2([Pipeline failed])
     C -->|✅ All green| D[SonarQube Analysis]
 
-    D -->|❌ Quality gate\nnot met| F3([Pipeline failed])
+    D -->|❌ Quality gate not met| F3([Pipeline failed])
     D -->|✅ Code quality OK| E[GreenIT Analysis]
 
-    E -->|❌ EcoIndex below threshold\nfor at least one URL| F4([Pipeline failed])
-    E -->|✅ All URLs meet\nEcoIndex threshold| G([✅ Pipeline passed])
+    E -->|❌ EcoIndex below threshold for at least one URL| F4([Pipeline failed])
+    E -->|✅ All URLs meet threshold| G([✅ Pipeline passed])
 
     style A fill:#4C6EF5,color:#fff,stroke:none
     style B fill:#343a40,color:#fff,stroke:none
