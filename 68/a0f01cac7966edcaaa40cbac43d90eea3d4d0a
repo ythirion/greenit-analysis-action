@@ -1,0 +1,14 @@
+action.yml
+  h_0a88d9aba8622a 86,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "68a0f01cac7966edcaaa40cbac43d90eea3d4d0a",
+  "prompts": {},
+  "humans": {
+    "h_0a88d9aba8622a": {
+      "author": "Yoan Thirion <yoan.thirion@gmail.com>"
+    }
+  }
+}
